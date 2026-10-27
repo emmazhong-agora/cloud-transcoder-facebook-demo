@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Go Live / Agora to Facebook</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Crect width='40' height='40' fill='%23234f40'/%3E%3Cpath d='M10 29L20 9l10 20h-6l-4-9-4 9z' fill='%23b8e752'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="/style.css">
+  <script defer src="/vendor/agora.js"></script><script type="module" src="/app.js"></script>
+</head>
+<body>
+<header><a class="brand" href="/">AGORA <span>/ FACEBOOK LIVE TEST</span></a><span class="local"><i></i> LOCAL TEST ENVIRONMENT</span></header>
+<main>
+  <section class="intro wizard-intro"><div><p class="eyebrow">RTC TO FACEBOOK / CUSTOMER TEST</p><h1>Go live.<br>One step at a time.</h1><p class="subtitle">Prepare your source, connect Facebook, start the stream, then preview and publish. Follow the four steps in order.</p></div><div class="journey-note"><span>THE SIGNAL PATH</span><p>Agora RTC <b>→</b> Cloud Transcoder <b>→</b> Facebook</p><small id="channelSummary">Your source is configured in step 1.</small></div></section>
+  <div class="draft-status"><div><span id="draftState" role="status">Restoring saved settings...</span><p class="hint">Your settings are saved in this browser, including tokens and streaming URLs. Reloading does not start or publish anything.</p></div><button id="saveDraft" class="text-button">Save now</button></div>
+  <input id="wizardStep" type="hidden" value="1">
+  <div class="guided-workspace">
+    <nav class="step-nav" aria-label="Broadcast setup steps">
+      <button type="button" data-step="1" aria-controls="step1" aria-current="step"><span>01</span><div><strong>Prepare your source</strong><small>Agora channel &amp; video</small></div></button>
+      <button type="button" data-step="2" aria-controls="step2"><span>02</span><div><strong>Connect Facebook</strong><small>Create or use a broadcast</small></div></button>
+      <button type="button" data-step="3" aria-controls="step3"><span>03</span><div><strong>Start the stream</strong><small>Send media with Agora</small></div></button>
+      <button type="button" data-step="4" aria-controls="step4"><span>04</span><div><strong>Preview &amp; go live</strong><small>Verify, publish &amp; share</small></div></button>
+      <p class="hint">Creating a Facebook broadcast and starting an Agora stream are separate actions. You publish only in step 4.</p>
+    </nav>
+    <div class="step-content">
+      <div id="notice" role="status">Connecting to the local server...</div>
+      <section id="step1" class="panel wizard-panel" aria-labelledby="step1Title">
+        <div class="section-title"><span class="num">01</span><h2 id="step1Title">Prepare your RTC source</h2><span id="credentials" class="tag">Checking setup</span></div>
+        <p class="step-lead">Tell Agora which publisher to receive. Keep your existing publisher sending audio and video while you run this test.</p>
+        <div class="outcome"><strong>What you need</strong><span>An Agora App ID, channel name, publisher UID, and the RTC tokens for the transcoder.</span></div>
+        <label>Agora App ID<input id="appId" placeholder="32-character App ID" autocomplete="off" spellcheck="false"></label>
+        <div class="pair"><label>RTC channel<input id="channel" value="demo-channel" spellcheck="false"></label><label>Publisher UID<input id="uid" value="12345" type="number" min="1" max="4294967295"></label></div>
+        <label>Transcoder audio RTC token<input id="audioToken" type="password" autocomplete="off" placeholder="Audio input token"></label>
+        <label>Transcoder video RTC token<input id="videoToken" type="password" autocomplete="off" placeholder="Video input token"></label>
+        <p class="hint">Use input tokens generated with UID 0 as required by Cloud Transcoder. Publisher UID above identifies the source to subscribe to. Leave tokens empty only if your Agora project does not require them.</p>
+        <details class="source-preview"><summary>Check the source here / Use this browser as a publisher</summary>
+          <p class="hint">Monitor an existing publisher, or publish your camera as the source. Browser tokens must match the browser UID. Camera mode requires the browser UID to equal Publisher UID.</p>
+          <div class="pair"><label>Browser mode<select id="rtcMode"><option value="monitor">Monitor an existing publisher</option><option value="publish">Publish this camera</option></select></label><label>Browser UID<input id="browserUid" type="number" min="1" max="4294967295" value="12346"></label></div>
+          <label>Browser RTC token<input id="browserToken" type="password" autocomplete="off" placeholder="Token for the browser UID"></label>
+          <div class="button-row"><button id="rtcJoin" class="secondary">Join &amp; check source</button><button id="rtcLeave" class="secondary" disabled>Leave channel</button><button id="rtcRenew" class="secondary" disabled>Renew token</button></div>
+          <div class="video-stage"><div id="player"></div><div id="videoEmpty"><span>RTC SOURCE PREVIEW</span><p>Waiting for media</p><small>This shows your Agora input. Facebook reception is checked in step 4.</small></div></div>
+          <div class="inline-actions"><button id="playAudio" class="text-button">Play subscribed audio</button><span id="rtcState" class="hint">Not connected</span></div>
+        </details>
+        <div class="step-actions"><span class="hint">Next: get a Facebook streaming destination.</span><button id="next1" class="primary">Continue to Facebook <span>→</span></button></div>
+      </section>
+      <section id="step2" class="panel wizard-panel" aria-labelledby="step2Title" hidden>
+        <div class="section-title"><span class="num">02</span><h2 id="step2Title">Connect a Facebook broadcast</h2></div>
+        <p class="step-lead">Create a new broadcast here, or paste a streaming URL you already obtained from Facebook. No video is published yet.</p>
+        <label>How would you like to connect?<select id="facebookMode"><option value="api">Create or manage a broadcast with the Meta API</option><option value="manual">I already have a Facebook streaming URL</option></select></label>
+        <div id="facebookApiSetup">
+          <details><summary>Facebook account settings</summary><p class="hint">Configure the corresponding access token in .env before starting the server.</p>
+            <div class="pair"><label>Broadcast target<select id="metaTargetType"><option value="profile">Personal profile</option><option value="page">Facebook Page</option></select></label><label>Graph API version<input id="graphVersion" value="v26.0"></label></div>
+            <label id="pageIdLabel">Page ID<input id="pageId" placeholder="Facebook Page ID"></label><button id="metaCheck" class="secondary">Check account &amp; permissions</button>
+          </details>
+          <p id="existingBroadcast" class="note" hidden>An existing Live Video ID is saved. Refresh its details to reuse it. Create another broadcast only when you need a new one.</p>
+          <label>Broadcast title<input id="liveTitle" value="Agora Cloud Transcoder test"></label>
+          <button id="metaCreate" class="secondary wide">Create Facebook broadcast &amp; get URL</button>
+          <div class="pair"><label>Live Video ID<input id="liveVideoId" placeholder="Filled automatically after creation"></label><div class="id-actions"><button id="copyLiveId" class="text-button" disabled>Copy ID</button><button id="metaQuery" class="secondary">Refresh broadcast details</button></div></div>
+          <p class="hint">The Live Video ID identifies the Facebook API object. It is not an Agora room number.</p>
+        </div>
+        <label>Facebook streaming URL <span class="label-note">For Agora to send media to Facebook; do not share with viewers.</span><textarea id="destination" rows="3" spellcheck="false" placeholder="Paste the complete RTMPS URL, including all signed parameters"></textarea></label>
+        <p class="hint">Creating a broadcast fills this automatically. The full URL is copied into the request for you in step 3.</p>
+        <details><summary>Advanced: inspect or combine a streaming URL</summary>
+          <div class="inline-actions"><button id="inspect" class="secondary">Inspect URL</button><span id="urlInfo" class="hint"></span></div>
+          <label>Server URL<input id="serverUrl" value="rtmps://live-api-s.facebook.com:443/rtmp/" spellcheck="false"></label><label>Stream key<textarea id="streamKey" rows="2" spellcheck="false"></textarea></label><button id="combine" class="secondary">Combine URL</button>
+          <p class="hint">Preserve all signed query parameters exactly. Do not encode the entire key.</p>
+        </details>
+        <div class="step-actions"><button class="secondary" data-back="1">Back</button><button id="next2" class="primary">Continue to stream setup <span>→</span></button></div>
+      </section>
+      <section id="step3" class="panel wizard-panel" aria-labelledby="step3Title" hidden>
+        <div class="section-title"><span class="num">03</span><h2 id="step3Title">Start sending to Facebook</h2><span id="taskState" class="tag">Not started</span></div>
+        <p id="requestBehavior" class="step-lead">Review your setup and start Cloud Transcoder. Your source and Facebook URL are applied automatically; no JSON editing is needed.</p>
+        <dl class="stream-review"><div><dt>RTC source</dt><dd id="reviewSource">Not configured</dd></div><div><dt>Facebook destination</dt><dd id="reviewDestination">Not configured</dd></div><div><dt>Video output</dt><dd id="reviewVideo">From the request configuration</dd></div></dl>
+        <div class="note">Starting creates a billable Agora cloud task. A running task means Agora is processing; confirm that Facebook receives video in step 4.</div>
+        <details id="advancedRequest"><summary>Advanced: encoding, request JSON &amp; compatibility tests</summary>
+          <label>Request mode<select id="requestMode"><option value="guided">Guided: apply source and URL automatically</option><option value="custom">Custom: send the JSON exactly as edited</option></select></label>
+          <p class="hint">Guided mode preserves encoding and layout edits while updating RTC input fields and the first output URL. Custom mode uses your JSON instead of the form; review every input and destination.</p>
+          <label>streamUrl field type<select id="urlType"><option value="array">Array - compatibility test</option><option value="string">String - REST API reference</option></select></label>
+          <div class="inline-actions"><button id="build" class="secondary">Apply form to JSON</button><button id="reset" class="text-button">Restore sample</button></div>
+          <label for="payload">Request JSON (contains tokens and stream keys)</label><textarea id="payload" class="code-editor" spellcheck="false" rows="20"></textarea>
+          <div id="payloadInfo" class="hint"></div><button id="validate" class="secondary">Validate JSON / URL</button>
+        </details>
+        <div class="step-actions"><button class="secondary" data-back="2">Back</button><button id="create" class="primary">Start streaming <span>↗</span></button></div>
+        <button id="next3" class="text-button wide">Already started a task? Continue to preview →</button>
+      </section>
+      <section id="step4" class="panel wizard-panel" aria-labelledby="step4Title" hidden>
+        <div class="section-title"><span class="num">04</span><h2 id="step4Title">Preview, publish &amp; share</h2></div>
+        <p class="step-lead">First confirm that Facebook receives your video. Then choose when to make it available to your audience.</p>
+        <p id="metaState" class="broadcast-status" role="status">Facebook status has not been checked.</p>
+        <div id="metaLinks" class="broadcast-result">
+          <h3>Preview in Facebook</h3><p class="hint">Open Live Producer, select Streaming software, and check the incoming video and audio. For a manually supplied URL, open the Live Producer page where you obtained it.</p>
+          <label>Live Producer URL<textarea id="metaProducerUrl" rows="2" readonly placeholder="Refresh Facebook details to retrieve this link"></textarea></label>
+          <a id="metaProducer" class="action-link" target="_blank" rel="noopener noreferrer" hidden>Open Live Producer ↗</a>
+          <button id="previewRefresh" class="secondary wide">Refresh Facebook status &amp; links</button>
+        </div>
+        <p id="manualPublishHelp" class="note" hidden>In the Live Producer page where you obtained your URL, confirm the incoming video and audio, check your audience, then click Go live. Copy the viewer link from Facebook after publication.</p>
+        <label id="previewConfirmation" class="check preview-check"><input id="previewConfirmed" type="checkbox">I can see and hear the stream in Live Producer, and I have checked the Facebook audience setting.</label>
+        <button id="metaPublish" class="primary wide" disabled>Publish to Facebook <span>↗</span></button>
+        <p class="hint">For an existing manually configured broadcast, you can also publish directly in Live Producer. Only me broadcasts remain private.</p>
+        <div id="shareBox" class="share-box"><h3>Share with your audience</h3><label>Viewer URL<textarea id="metaViewerUrl" rows="2" readonly placeholder="Retrieved from the Facebook broadcast details"></textarea></label><div class="inline-actions"><button id="copyViewerUrl" class="secondary" disabled>Copy viewer URL</button><a id="metaWatch" target="_blank" rel="noopener noreferrer" hidden>Open viewer page ↗</a></div><p class="hint">This is the link viewers use after publication, subject to the broadcast audience setting. The streaming URL from step 2 is private.</p></div>
+        <details id="taskManager"><summary>Finish the test / Manage existing tasks</summary>
+          <label>Selected Agora task<select id="taskSelect"><option value="">No saved tasks</option></select></label>
+          <div class="button-row"><button id="query" class="secondary">Refresh task status</button><button id="destroy" class="danger">Stop Agora task</button></div><label class="check"><input type="checkbox" id="poll">Refresh the selected task every 5 seconds</label>
+          <button id="metaEnd" class="danger wide">End Facebook broadcast</button><p class="hint">Stop both services after testing. Ending Facebook does not stop Agora billing. Closing this page stops neither service.</p>
+        </details>
+        <details><summary>Troubleshooting: Facebook errors</summary><button id="metaErrors" class="secondary">Query Facebook errors</button></details>
+        <div class="step-actions"><button class="secondary" data-back="3">Back to stream setup</button></div>
+      </section>
+    </div>
+  </div>
+  <details class="diagnostics"><summary>Advanced diagnostics / Redacted request logs</summary><div class="panel logs"><div class="section-title"><h2>Requests &amp; Diagnostics</h2><button id="export" class="text-button">Export redacted report</button></div><p class="hint">HTTP responses, request IDs and error details. Tokens and streaming URLs are redacted.</p><div id="logList" aria-live="polite"><p class="empty-log">Waiting for the first operation.</p></div></div></details>
+  <footer><span>AFTER YOUR TEST</span><p>End the Facebook broadcast and stop the Agora task in step 4. Cloud tasks continue running when you close the browser.</p></footer>
+</main>
+</body>
+</html>
